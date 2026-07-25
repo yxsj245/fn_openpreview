@@ -1,0 +1,4 @@
+#!/bin/bash
+# 安装后处理：确保 CGI 入口具有可执行权限
+chmod 755 "$TRIM_APPDEST/ui/index.cgi" 2>/dev/null || true
+exit 0

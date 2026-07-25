@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>极速文件预览器</title>
+  <link rel="stylesheet" href="assets/viewer.css?v=0.2.1" />
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f0f1f4;
+      --surface: #ffffff;
+      --surface-2: #e8eaed;
+      --hover: rgba(0, 0, 0, 0.06);
+      --active: rgba(59, 130, 246, 0.12);
+      --border: rgba(0, 0, 0, 0.1);
+      --text: #1f2937;
+      --text-muted: rgba(31, 41, 55, 0.55);
+      --accent: #3b82f6;
+      --tab-bar-bg: #d8dadf;
+      --tab-bg: transparent;
+      --tab-active-bg: var(--surface);
+      --tab-hover-bg: rgba(0, 0, 0, 0.05);
+      --close-hover: rgba(0, 0, 0, 0.12);
+      --modal-overlay: rgba(0, 0, 0, 0.4);
+    }
+    :root.theme-dark {
+      color-scheme: dark;
+      --bg: #17181c;
+      --surface: #1e1f24;
+      --surface-2: #2a2b30;
+      --hover: rgba(255, 255, 255, 0.07);
+      --active: rgba(96, 165, 250, 0.2);
+      --border: rgba(255, 255, 255, 0.1);
+      --text: #e5e7eb;
+      --text-muted: rgba(229, 231, 235, 0.45);
+      --accent: #60a5fa;
+      --tab-bar-bg: #0d0e12;
+      --tab-bg: transparent;
+      --tab-active-bg: var(--surface);
+      --tab-hover-bg: rgba(255, 255, 255, 0.06);
+      --close-hover: rgba(255, 255, 255, 0.12);
+      --modal-overlay: rgba(0, 0, 0, 0.6);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    body {
+      font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+    #app {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- 标签栏 ---- */
+    #tab-bar {
+      flex: none;
+      display: flex;
+      align-items: stretch;
+      background: var(--tab-bar-bg);
+      border-bottom: 1px solid var(--border);
+      min-height: 38px;
+      -webkit-app-region: drag;
+      user-select: none;
+    }
+    #tabs {
+      flex: 1;
+      display: flex;
+      align-items: stretch;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: thin;
+      -webkit-app-region: no-drag;
+    }
+    #tabs::-webkit-scrollbar { height: 3px; }
+    #tabs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .tab {
+      flex: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 220px;
+      min-width: 100px;
+      padding: 0 6px 0 14px;
+      background: var(--tab-bg);
+      border-right: 1px solid var(--border);
+      cursor: pointer;
+      position: relative;
+      transition: background 0.12s;
+    }
+    .tab:hover { background: var(--tab-hover-bg); }
+    .tab.active {
+      background: var(--tab-active-bg);
+    }
+    .tab.active::after {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--accent);
+    }
+    .tab-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .tab-close {
+      flex: none;
+      width: 20px;
+      height: 20px;
+      border: none;
+      border-radius: 4px;
+      background: none;
+      color: var(--text-muted);
+      font-size: 15px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.12s, background 0.12s;
+    }
+    .tab:hover .tab-close,
+    .tab.active .tab-close { opacity: 1; }
+    .tab-close:hover { background: var(--close-hover); color: var(--text); }
+    .tab-loading .tab-name::before {
+      content: "";
+      display: inline-block;
+      width: 10px; height: 10px;
+      margin-right: 6px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: ofv-tab-spin 0.7s linear infinite;
+      vertical-align: -1px;
+    }
+    @keyframes ofv-tab-spin { to { transform: rotate(360deg); } }
+
+    /* ---- 内容区域 ---- */
+    #content {
+      flex: 1;
+      min-height: 0;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    #viewer {
+      flex: 1;
+      min-height: 0;
+    }
+    .state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 32px;
+      text-align: center;
+    }
+    .state[hidden] { display: none; }
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      animation: ofv-spin 0.9s linear infinite;
+    }
+    @keyframes ofv-spin { to { transform: rotate(360deg); } }
+    .state .title { font-size: 16px; font-weight: 600; }
+    .state .detail {
+      font-size: 13px;
+      opacity: 0.7;
+      word-break: break-all;
+      max-width: 72ch;
+    }
+    .state .actions { margin-top: 8px; display: flex; gap: 10px; }
+    .btn {
+      display: inline-block;
+      padding: 8px 18px;
+      border-radius: 8px;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font-size: 14px;
+      text-decoration: none;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity 0.12s;
+    }
+    .btn:hover { opacity: 0.88; }
+    .btn.secondary {
+      background: var(--surface-2);
+      color: var(--text);
+    }
+    .landing h1 { font-size: 20px; margin: 0 0 8px; }
+    .landing p { margin: 4px 0; font-size: 14px; opacity: 0.8; max-width: 60ch; line-height: 1.8; }
+
+    /* ---- 压缩包浏览 ---- */
+    .archive-layout {
+      height: 100%;
+      display: flex;
+    }
+    .archive-list {
+      width: 280px;
+      flex: none;
+      overflow: auto;
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .archive-list-header {
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0.8;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--surface);
+      z-index: 1;
+    }
+    .archive-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 8px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      border: none;
+      background: none;
+      text-align: left;
+      color: inherit;
+      font-family: inherit;
+      transition: background 0.1s;
+    }
+    .archive-item:hover { background: var(--hover); }
+    .archive-item.active { background: var(--active); }
+    .archive-item .name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .archive-item .size {
+      flex: none;
+      opacity: 0.6;
+      font-variant-numeric: tabular-nums;
+    }
+    .archive-preview {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+    }
+    .archive-empty {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.6;
+      font-size: 13px;
+      padding: 24px;
+      text-align: center;
+    }
+
+    /* ---- 密码对话框 ---- */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--modal-overlay);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-overlay[hidden] { display: none; }
+    .modal {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 24px;
+      width: 360px;
+      max-width: 90vw;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+    .modal-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .modal-hint {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin: 0 0 16px;
+      line-height: 1.5;
+    }
+    .modal-hint.error { color: #ef4444; }
+    .modal input[type="password"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.12s;
+    }
+    .modal input[type="password"]:focus {
+      border-color: var(--accent);
+    }
+    .modal .checkbox {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 12px;
+      font-size: 13px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .modal .checkbox input { cursor: pointer; }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    /* ---- 右键菜单 ---- */
+    .context-menu {
+      position: fixed;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+      z-index: 2000;
+      min-width: 160px;
+    }
+    .context-menu[hidden] { display: none; }
+    .context-menu-item {
+      display: block;
+      width: 100%;
+      padding: 8px 14px;
+      border: none;
+      background: none;
+      color: var(--text);
+      font-size: 13px;
+      text-align: left;
+      cursor: pointer;
+      border-radius: 4px;
+      font-family: inherit;
+      transition: background 0.1s;
+    }
+    .context-menu-item:hover { background: var(--hover); }
+    .context-menu-item.danger { color: #ef4444; }
+    .context-menu-item.danger:hover { background: rgba(239, 68, 68, 0.1); }
+
+    /* ---- SDK zoom tracker 隐藏 ---- */
+    .ofv-zoom-tracker { display: none !important; }
+
+    /* ---- SDK 容器背景 ---- */
+    #viewer > .ofv-root { background: var(--surface); }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="tab-bar">
+      <div id="tabs"></div>
+    </div>
+    <div id="content">
+      <div id="state-loading" class="state" hidden>
+        <div class="spinner"></div>
+        <div class="title">正在加载文件…</div>
+        <div class="detail" id="loading-name"></div>
+      </div>
+
+      <div id="state-error" class="state" hidden>
+        <div class="title" id="error-title">无法预览文件</div>
+        <div class="detail" id="error-detail"></div>
+        <div class="actions">
+          <a class="btn" id="error-download" href="#">下载原文件</a>
+          <button class="btn secondary" id="error-retry" type="button">重试</button>
+        </div>
+      </div>
+
+      <div id="state-landing" class="state landing" hidden>
+        <h1>极速文件预览器</h1>
+        <p>在文件管理器中双击受支持的文件（Office 文档、文本代码、压缩包、邮件、音频、电子书、绘图、CAD、3D、GIS 等），即可在此窗口中预览。</p>
+        <p>也可以在文件上点击右键，通过「打开方式」选择本应用。</p>
+      </div>
+
+      <div id="viewer"></div>
+    </div>
+  </div>
+
+  <!-- 密码对话框 -->
+  <div id="password-dialog" class="modal-overlay" hidden>
+    <div class="modal">
+      <div class="modal-title" id="password-title">压缩包已加密</div>
+      <p class="modal-hint" id="password-hint">请输入密码以预览压缩包内容</p>
+      <input type="password" id="password-input" placeholder="输入密码" autocomplete="off" />
+      <label class="checkbox">
+        <input type="checkbox" id="remember-password" />
+        <span>记住密码（保存在浏览器中）</span>
+      </label>
+      <div class="modal-actions">
+        <button class="btn secondary" id="password-cancel" type="button">取消</button>
+        <button class="btn" id="password-confirm" type="button">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 标签页右键菜单 -->
+  <div id="tab-context-menu" class="context-menu" hidden>
+    <button class="context-menu-item" data-action="close" type="button">关闭标签页</button>
+    <button class="context-menu-item" data-action="close-others" type="button">关闭其他标签页</button>
+    <button class="context-menu-item danger" data-action="close-all" type="button">关闭所有标签页</button>
+  </div>
+
+  <script src="assets/viewer.js?v=0.2.1" defer></script>
+</body>
+</html>

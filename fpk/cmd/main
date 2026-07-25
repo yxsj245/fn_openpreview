@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# 极速文件预览器是纯静态 CGI 应用，不运行常驻进程。
+# manifest 中 ctl_stop=false，以下分支仅作占位，保证脚本可重复执行。
+
+case "$1" in
+  start)
+    exit 0
+    ;;
+  stop)
+    exit 0
+    ;;
+  status)
+    exit 0
+    ;;
+  *)
+    exit 1
+    ;;
+esac

@@ -1,0 +1,18 @@
+# Dependencies
+viewer/node_modules/
+
+# Build outputs
+dist/
+fpk/*.fpk
+fpk/app/www/assets/viewer.css
+fpk/app/www/assets/viewer.js
+
+# IDE / Editor - personal config
+.vscode/sftp.json
+
+# OS generated files
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+docs/fnnas-docs

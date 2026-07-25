@@ -1,0 +1,27 @@
+{
+  ".url": {
+    "fn_openpreview.main": {
+      "title": "极速文件预览器",
+      "icon": "images/icon_{0}.png",
+      "type": "iframe",
+      "protocol": "http",
+      "url": "/cgi/ThirdParty/fn_openpreview/index.cgi/",
+      "allUsers": true,
+      "fileTypes": [
+        "txt", "log", "ini", "conf", "yaml", "yml", "xml",
+        "html", "css", "js", "ts", "tsx", "vue", "py", "go", "rs", "java", "c", "cpp", "h", "sh", "sql",
+        "doc", "docx", "rtf", "odt", "xls", "xlsx", "ods", "csv",
+        "ppt", "pptx", "odp", "wps", "et", "dps",
+        "zip", "rar", "7z", "tar", "gz", "tgz", "xz",
+        "eml", "msg", "mbox",
+        "epub", "ofd", "xps", "oxps",
+        "mp3", "wav", "ogg", "m4a", "flac",
+        "drawio",
+        "dxf", "dwg", "step", "stp", "iges", "igs",
+        "gltf", "glb", "obj", "stl", "fbx", "ply", "3mf",
+        "geojson", "kml", "kmz", "gpx", "shp",
+        "psd", "ai"
+      ]
+    }
+  }
+}
