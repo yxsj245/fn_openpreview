@@ -1,8 +1,9 @@
 appname="fn_openpreview"
 version="0.2.1"
 display_name="极速文件预览器"
-desc="低占用 · 极速秒开：纯静态 CGI 架构，无常驻进程、零常驻内存，双击即开、用完即走。在飞牛桌面窗口内预览 Office 文档、文本代码、压缩包、邮件、音频、电子书、绘图、CAD、3D、GIS 等格式。基于 [Open File Viewer](https://github.com/xushanpei/open-file-viewer)。"
+
 maintainer="又菜又爱玩的小朱"
+desc="低占用 · 极速秒开：纯静态 CGI 架构，无常驻进程、零常驻内存，双击即开、用完即走。在飞牛桌面窗口内预览 Office 文档、文本代码、压缩包、邮件、音频、电子书、绘图、CAD、3D、GIS 等格式。基于 <a href='https://github.com/xushanpei/open-file-viewer'>Open File Viewer</a>。开源地址：<a href='https://github.com/yxsj245/fn_openpreview'>https://github.com/yxsj245/fn_openpreview</a>"
 maintainer_url="https://www.xiaozhuhouses.asia/"
 source="thirdparty"
 platform="all"
