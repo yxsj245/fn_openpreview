@@ -1,5 +1,5 @@
 appname="fn_openpreview"
-version="0.2.1"
+version="0.3.0"
 display_name="极速文件预览器"
 
 maintainer="又菜又爱玩的小朱"
@@ -12,3 +12,4 @@ desktop_uidir="ui"
 desktop_applaunchname="fn_openpreview.main"
 ctl_stop=true
 checkport=false
+changelog="新增配置文件支持：Markdown、JSON/JSONC、TOML、环境变量、properties、lock 等；补充音频（AAC/Opus/WMA）、压缩包（bz2）、设计资产（PSB）、字体（TTF/OTF/WOFF）格式。移除编程代码文件关联。"
